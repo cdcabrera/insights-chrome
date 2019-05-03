@@ -2,6 +2,7 @@
 import Keycloak from 'keycloak-js';
 import BroadcastChannel from 'broadcast-channel';
 import cookie from 'js-cookie';
+window.testcookie = cookie;
 
 // Utils
 const log = require('./logger')('jwt.js');
@@ -203,12 +204,34 @@ function loginAllTabs() {
 exports.getUserInfo = () => {
     log('Getting User Information');
 
+    if(!cookie.get(DEFAULT_COOKIE_NAME) && requiresAuth()) {
+        exports.login()
+    }
+
     if (isExistingValid(priv.keycloak.token)) {
         return insightsUser(priv.keycloak.tokenParsed);
     }
 
     return updateToken().then(() => insightsUser(priv.keycloak.tokenParsed));
 };
+
+function requiresAuth() {
+    const pathName = window.location.pathname.split('/').shift();
+
+    if(pathName[0] === 'beta') {
+        pathName.shift();
+    }
+
+    if(pathName[0] === 'rhel' ||
+       pathName[0] === 'insights' ||
+       pathName[0] === 'hybrid' ||
+       pathName[0] === 'apps' ||
+       pathName[0] === 'openshift') {
+            return true;    
+    }
+
+    return false;
+}
 
 // Check to see if the user is loaded, this is what API calls should wait on
 exports.isAuthenticated = () => {
